@@ -122,7 +122,7 @@ if __name__ == "__main__":
         data = json.load(f)
     for pump in data['pumps']:
         # loop for head and flow curves
-        if len(pump['Q']) > 1:
+        if type(pump['Q']) == list:
             H, Q = func_curve_fit(pump['Q'], pump['H'], n=points)
             effy, Q = func_curve_fit(pump['Q'], pump['effy'], n=points)
             P, Q = func_curve_fit(pump['Q'], pump['P'], n=points)
@@ -132,14 +132,14 @@ if __name__ == "__main__":
             pump['P'] = P
             
         # loop for beta and delta angles and radius
-        if len(pump['NEN_r_array']) > 1:
+        if type(pump['NEN_r_array']) == list:
             beta, r = angle_curve_fit(pump['NEN_r_array'], pump['NEN_beta_array'], n=points)
             delta, r = angle_curve_fit(pump['NEN_r_array'], pump['NEN_delta_array'], n=points)
             pump['NEN_r_array'] = r
             pump['NEN_beta_array'] = beta
             pump['NEN_delta_array'] = delta
         # loop for blade thickness and radius
-        if len(pump['imp_thk']) > 1:
+        if type(pump['imp_thk']) == list:
             pump['imp_thk'], pump['r_imp_thk'] = thk_curve_fit(pump['r_imp_thk'], pump['imp_thk'], n=points)
     # save data to json file
     with open(database_path, 'w') as f:
