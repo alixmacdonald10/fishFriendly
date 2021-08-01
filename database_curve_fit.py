@@ -141,7 +141,7 @@ if __name__ == "__main__":
         # loop for blade thickness and radius
         if len(pump['imp_thk']) > 1:
             pump['imp_thk'], pump['r_imp_thk'] = thk_curve_fit(pump['r_imp_thk'], pump['imp_thk'], n=points)
-        # save data to json file
-        with open(database_path, 'w') as f:
-            json.dump(data, f)
-        
+    # save data to json file
+    with open(database_path, 'w') as f:
+        json.dump(data, f)
+    
