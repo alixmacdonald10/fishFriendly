@@ -126,21 +126,23 @@ if __name__ == "__main__":
             H, Q = func_curve_fit(pump['Q'], pump['H'], n=points)
             effy, Q = func_curve_fit(pump['Q'], pump['effy'], n=points)
             P, Q = func_curve_fit(pump['Q'], pump['P'], n=points)
-            pump['Q'] = Q 
-            pump['H'] = H
-            pump['effy'] = effy
-            pump['P'] = P
+            pump['Q'] = pd.Series.tolist(Q) 
+            pump['H'] = pd.Series.tolist(H)
+            pump['effy'] = pd.Series.tolist(effy)
+            pump['P'] = pd.Series.tolist(P)
             
         # loop for beta and delta angles and radius
         if type(pump['NEN_r_array']) == list:
             beta, r = angle_curve_fit(pump['NEN_r_array'], pump['NEN_beta_array'], n=points)
             delta, r = angle_curve_fit(pump['NEN_r_array'], pump['NEN_delta_array'], n=points)
-            pump['NEN_r_array'] = r
-            pump['NEN_beta_array'] = beta
-            pump['NEN_delta_array'] = delta
+            pump['NEN_r_array'] = pd.Series.tolist(r)
+            pump['NEN_beta_array'] = pd.Series.tolist(beta)
+            pump['NEN_delta_array'] = pd.Series.tolist(delta)
         # loop for blade thickness and radius
         if type(pump['imp_thk']) == list:
-            pump['imp_thk'], pump['r_imp_thk'] = thk_curve_fit(pump['r_imp_thk'], pump['imp_thk'], n=points)
+            thk, r = thk_curve_fit(pump['r_imp_thk'], pump['imp_thk'], n=points)
+            pump['imp_thk']= pd.Series.tolist(thk)
+            pump['r_imp_thk'] = pd.Series.tolist(r)
     # save data to json file
     with open(database_path, 'w') as f:
         json.dump(data, f)
