@@ -46,7 +46,8 @@ def func_curve_fit(f1, f2, n=100):
 
 if __name__ == "__main__":
     # inputs
-    database_path = 'D:\\Scripts\\Python\\fishFreindly\\database.json'
+    database_path = 'D:\\Scripts\\fishFriendly\\database.json'
+    points = 30
     # load in the pump data    
     with open(database_path) as f:
         data = json.load(f)
@@ -54,11 +55,14 @@ if __name__ == "__main__":
         # loop for head and flow curves
         pump['Q']
         pump['H']
-        pump['H'], pump['Q'] = func_curve_fit(pump['Q'], pump['H'], n=100)
-        
+        pump['H'], pump['Q'] = func_curve_fit(pump['Q'], pump['H'], n=points)
+        pump['effy'], pump['Q'] = func_curve_fit(pump['Q'], pump['effy'], n=points)
+        pump['P'], pump['Q'] = func_curve_fit(pump['Q'], pump['P'], n=points)
         # loop for beta and delta angles and radius
-        
+        pump['NEN_beta_array'], pump['NEN_r_array'] = func_curve_fit(pump['NEN_r_array'], pump['NEN_beta_array'], n=points)
+        pump['NEN_delta_array'], pump['NEN_r_array'] = func_curve_fit(pump['NEN_r_array'], pump['NEN_delta_array'], n=points)
         # loop for blade thickness and radius
+        pump['imp_thk'], pump['r_imp_thk'] = func_curve_fit(pump['r_imp_thk'], pump['imp_thk'], n=points)
     
 
         
