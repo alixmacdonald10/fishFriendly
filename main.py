@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
+from numba import njit
 
 
 
@@ -15,7 +16,7 @@ def load_pump(database_name, database_path):
             break
     return pump_db
     
-    
+
 def scale_duty(pump_speed, Q, H, P, N):
     Q_scaled = Q_scale(Q, N, pump_speed)
     H_scaled = H_scale(H, N, pump_speed)
@@ -257,7 +258,6 @@ def plot_result(pump_db, result, duty_db, title):
     CS = ax.contour(X, Y, Z)
     ax.clabel(CS, inline=True, fontsize=10)
     ax.set_xlim(left=0)
-    ax.set_ylim(bottom=0)
     ax.set_title(title)
     # plot pump curve over contour plot
     plt.plot(

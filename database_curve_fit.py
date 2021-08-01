@@ -116,7 +116,7 @@ def thk_curve_fit(f1, f2, n=100):
 if __name__ == "__main__":
     # inputs
     database_path = 'D:\\Scripts\\fishFriendly\\database.json'
-    points = 30
+    points = 30  # number of points to curve fit
     # load in the pump data    
     with open(database_path) as f:
         data = json.load(f)
