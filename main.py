@@ -119,7 +119,7 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=50):
                 beta = np.radians(pump_db['NEN_beta_array'][r_angle_idx])
                 delta = np.radians(pump_db['NEN_delta_array'][r_angle_idx])
                 # determine thickness at radial position
-                r_thk_idx, _ = find_nearest(pd.Series(pump_db['r_imp_thk']), r*R_o)
+                r_thk_idx, _ = find_nearest(pd.Series(pump_db['r_imp_thk']), r * 1e3)
                 d = pump_db['imp_thk'][r_thk_idx]
                 # strike velocity
                 v_strike = strike_velocity(v_m, omega, r, beta, delta)
