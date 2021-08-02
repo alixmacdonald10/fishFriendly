@@ -254,6 +254,7 @@ def plot_result(pump_db, result, duty_db, title):
     X = pump_db['Q']
     Y = pump_db['H']
     Z = result
+    
     # plot contour lines
     fig, ax = plt.subplots()
     CS = ax.contour(X, Y, Z)
@@ -268,6 +269,10 @@ def plot_result(pump_db, result, duty_db, title):
     plt.scatter(
         duty_db['Q'], duty_db['H']
     )
+    Q_idx, _ = find_nearest(pump_db['Q'], duty_db['Q'])
+    H_idx, _ = find_nearest(pump_db['H'], duty_db['H'])
+    
+    plt.text(duty_db['Q'], duty_db['H'], str(format(result[Q_idx, H_idx], ".2f")))
     plt.show(block=True)
 
 
