@@ -98,7 +98,7 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=50):
             # head
             H_temp = pump_db['H'][j]
             # determine pump speed required for head and flow value
-            N_pump_scale = N_scale(pump_db['N'], pump_db['H'][0], H_temp)
+            N_pump_scale = N_scale(pump_db['N'], pump_db['H'][i], H_temp)
             # determine rotational speed
             omega = 2.0 * np.pi * N_pump_scale / 60.0  # rad/s
             # initial area - reset at each duty position
@@ -115,7 +115,8 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=50):
                 # collision probabilty
                 dP_th = collision_probability(L_eff, v_m, omega, r, pump_db['n_blade'])
                 # determine angles at radial position
-                r_angle_idx, _ = find_nearest(pd.Series(pump_db['NEN_r_array']), r)
+                r_angle_lookup = r / R_o
+                r_angle_idx, _ = find_nearest(pd.Series(pump_db['NEN_r_array']), r_angle_lookup)
                 beta = np.radians(pump_db['NEN_beta_array'][r_angle_idx])
                 delta = np.radians(pump_db['NEN_delta_array'][r_angle_idx])
                 # determine thickness at radial position
