@@ -70,7 +70,7 @@ def find_nearest(array, value):
     return idx, val
 
 
-def NEN_analyse(pump_db, fish_db, intake, n_steps=10):
+def NEN_analyse(pump_db, fish_db, intake, n_steps=30):
     
     # calculate effective length of fish
     L_eff = length_eff(fish_db['L_f'], fish_db['B_f'], fish_db['fish_type'], intake)
@@ -86,7 +86,6 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=10):
     P_th = np.zeros([Q_points, H_points], dtype=np.float64, order='C')
     f_MR = np.zeros([Q_points, H_points], dtype=np.float64, order='C')
     P_m = np.zeros([Q_points, H_points], dtype=np.float64, order='C')
-    v_m_array = np.zeros([Q_points, H_points], dtype=np.float64, order='C')
     # for each radial position along the blade and for each flowrate the
     # mortality rate will be calculated.
     for i in range(0, Q_points):
@@ -138,14 +137,13 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=10):
                 P_th[j][i] = ((P_th[j][i] + (dP_th * v_m * d_A)))
                 f_MR[j][i] = ((f_MR[j][i] + (df_MR * v_m * d_A)))
                 P_m[j][i] = ((P_m[j][i] + (dP_m * v_m * d_A)))
-            v_m_array[j][i] = v_m
             v_strike_max_array[j][i] = v_strike_max
             # determine total mortality as per NEN 8775, section 9.9
             P_th[j][i] = P_th[j][i] / Q_temp
             f_MR[j][i] = f_MR[j][i] / Q_temp
             P_m[j][i] = P_m[j][i] / Q_temp
 
-    return v_strike_max_array, P_th, f_MR, P_m, v_m_array
+    return v_strike_max_array, P_th, f_MR, P_m
 
 
 def length_eff(L_f, B_f, fish_type, intake):
@@ -319,9 +317,8 @@ if __name__ == '__main__':
     
         
     # analyse to standards
-    v_strike, P_th, f_MR, P_m, v_m_array = NEN_analyse(pump_db, fish_db, intake)
-    
-    plot_result(pump_db, v_m_array, duty_db, title='Flow velocity m/s')
+    v_strike, P_th, f_MR, P_m = NEN_analyse(pump_db, fish_db, intake)
+
     plot_result(pump_db, v_strike, duty_db, title='Max Strike Velocity m/s')
     plot_result(pump_db, P_th, duty_db, title='Collision Probabiltiy')
     plot_result(pump_db, f_MR, duty_db, title='Mortality Factor')
