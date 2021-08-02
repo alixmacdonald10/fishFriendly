@@ -70,7 +70,7 @@ def find_nearest(array, value):
     return idx, val
 
 
-def NEN_analyse(pump_db, fish_db, intake, n_steps=50):
+def NEN_analyse(pump_db, fish_db, intake, n_steps=10):
     
     # calculate effective length of fish
     L_eff = length_eff(fish_db['L_f'], fish_db['B_f'], fish_db['fish_type'], intake)
@@ -78,21 +78,23 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=50):
     Q_points = len(pump_db['Q'])
     H_points = len(pump_db['H'])
     # change in radius per step
-    R_o = pump_db['D_blade']/2
-    R_i = pump_db['d_blade']/2
+    R_o = pump_db['D_blade'] / 2
+    R_i = pump_db['d_blade'] / 2
     d_r = (R_o - R_i) / n_steps
     #Initialise zero matrices as correct size for storing variables at the end of the loop
     v_strike_max_array= np.zeros([Q_points, H_points], dtype=np.float64, order='C')
     P_th = np.zeros([Q_points, H_points], dtype=np.float64, order='C')
     f_MR = np.zeros([Q_points, H_points], dtype=np.float64, order='C')
     P_m = np.zeros([Q_points, H_points], dtype=np.float64, order='C')
+    v_m_array = np.zeros([Q_points, H_points], dtype=np.float64, order='C')
     # for each radial position along the blade and for each flowrate the
-    # mortality rate will be calculated. 
+    # mortality rate will be calculated.
     for i in range(0, Q_points):
         # flow
         Q_temp = pump_db['Q'][i]
         # flow velocity
-        v_m = Q_temp / (np.pi * (R_o**2 - R_i**2))
+        area = np.pi * (R_o**2 - R_i**2)
+        v_m = Q_temp / area
         # loop through head values
         for j in range(0, H_points):
             # head
@@ -100,7 +102,7 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=50):
             # determine pump speed required for head and flow value
             N_pump_scale = N_scale(pump_db['N'], pump_db['H'][i], H_temp)
             # determine rotational speed
-            omega = 2.0 * np.pi * N_pump_scale / 60.0  # rad/s
+            omega = (2.0 * np.pi * N_pump_scale) / 60.0  # rad/s
             # initial area - reset at each duty position
             A = 0
             # step along blade at this duty and sum factors
@@ -117,30 +119,33 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=50):
                 # determine angles at radial position
                 r_angle_lookup = r / R_o
                 r_angle_idx, _ = find_nearest(pd.Series(pump_db['NEN_r_array']), r_angle_lookup)
-                beta = np.radians(pump_db['NEN_beta_array'][r_angle_idx])
-                delta = np.radians(pump_db['NEN_delta_array'][r_angle_idx])
-                # determine thickness at radial position
-                r_thk_idx, _ = find_nearest(pd.Series(pump_db['r_imp_thk']), r * 1e3)
-                d = pump_db['imp_thk'][r_thk_idx]
+                beta_deg = pump_db['NEN_beta_array'][r_angle_idx]
+                beta = np.radians(beta_deg)
+                delta_deg = pump_db['NEN_delta_array'][r_angle_idx]
+                delta = np.radians(delta_deg)
                 # strike velocity
                 v_strike = strike_velocity(v_m, omega, r, beta, delta)
                 if v_strike > v_strike_max:
                     v_strike_max = v_strike
+                # determine thickness at radial position
+                r_thk_idx, _ = find_nearest(pd.Series(pump_db['r_imp_thk']), r * 1e3)
+                d = pump_db['imp_thk'][r_thk_idx]
                 # mortality factor
                 df_MR = mortality_factor(L_f, d, v_strike, fish_type)
                 # mortality probabilty
                 dP_m = dP_th * df_MR
                 # determine cumulative probabilities and factors
-                P_th[i, j] = ((P_th[i, j] + (dP_th * v_m * d_A)))
-                f_MR[i, j] = ((f_MR[i, j] + (df_MR * v_m * d_A)))
-                P_m[i, j] = ((P_m[i, j] + (dP_m * v_m * d_A)))
-            v_strike_max_array[i, j] = v_strike_max
+                P_th[j][i] = ((P_th[j][i] + (dP_th * v_m * d_A)))
+                f_MR[j][i] = ((f_MR[j][i] + (df_MR * v_m * d_A)))
+                P_m[j][i] = ((P_m[j][i] + (dP_m * v_m * d_A)))
+            v_m_array[j][i] = v_m
+            v_strike_max_array[j][i] = v_strike_max
             # determine total mortality as per NEN 8775, section 9.9
-            P_th[i, j] = P_th[i, j] / Q_temp
-            f_MR[i, j] = f_MR[i, j] / Q_temp
-            P_m[i, j] = P_m[i, j] / Q_temp
+            P_th[j][i] = P_th[j][i] / Q_temp
+            f_MR[j][i] = f_MR[j][i] / Q_temp
+            P_m[j][i] = P_m[j][i] / Q_temp
 
-    return v_strike_max_array, P_th, f_MR, P_m
+    return v_strike_max_array, P_th, f_MR, P_m, v_m_array
 
 
 def length_eff(L_f, B_f, fish_type, intake):
@@ -185,10 +190,10 @@ def collision_probability(L_eff, v_m, omega, r, n_blade, wf=0, alpha=0):
     return P_th
 
 
-def strike_velocity(v_f, omega, r, beta, delta):
+def strike_velocity(v_m, omega, r, beta, delta):
     # assume no fish relative motion and no pre swirl
     v_strike = np.sqrt(
-        (v_f * np.cos(beta))**2 + ((omega * r) * np.cos(delta))**2
+        (v_m * np.cos(beta))**2 + ((omega * r) * np.cos(delta))**2
     )
     return v_strike
 
@@ -264,6 +269,8 @@ def plot_result(pump_db, result, duty_db, title):
     ax.clabel(CS, inline=True, fontsize=10)
     ax.set_xlim(left=0)
     ax.set_title(title)
+    ax.set_xlabel('Flow ($m^3/s$)')
+    ax.set_ylabel('Head (m)')
     # plot pump curve over contour plot
     plt.plot(pump_db['Q'], pump_db['H'])
     # plot duty point
@@ -271,7 +278,7 @@ def plot_result(pump_db, result, duty_db, title):
     Q_idx, _ = find_nearest(pump_db['Q'], duty_db['Q'])
     H_idx, _ = find_nearest(pump_db['H'], duty_db['H'])
     
-    plt.text(duty_db['Q'], duty_db['H'], str(format(result[Q_idx, H_idx], ".2f")))
+    plt.text(duty_db['Q'], duty_db['H'], f'  {format(result[Q_idx, H_idx], ".2f")}')
     plt.show(block=False)
 
 
@@ -312,8 +319,9 @@ if __name__ == '__main__':
     
         
     # analyse to standards
-    v_strike, P_th, f_MR, P_m = NEN_analyse(pump_db, fish_db, intake)
+    v_strike, P_th, f_MR, P_m, v_m_array = NEN_analyse(pump_db, fish_db, intake)
     
+    plot_result(pump_db, v_m_array, duty_db, title='Flow velocity m/s')
     plot_result(pump_db, v_strike, duty_db, title='Max Strike Velocity m/s')
     plot_result(pump_db, P_th, duty_db, title='Collision Probabiltiy')
     plot_result(pump_db, f_MR, duty_db, title='Mortality Factor')
