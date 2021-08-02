@@ -257,23 +257,22 @@ def plot_result(pump_db, result, duty_db, title):
     
     # plot contour lines
     fig, ax = plt.subplots()
-    CS = ax.contour(X, Y, Z)
+    CS = ax.contour(X, Y, Z, cmap='binary')
+    ax.contourf(X, Y, Z,
+                cmap='RdYlGn_r', extend='both', alpha=0.5
+    )
     ax.clabel(CS, inline=True, fontsize=10)
     ax.set_xlim(left=0)
     ax.set_title(title)
     # plot pump curve over contour plot
-    plt.plot(
-        pump_db['Q'], pump_db['H']
-    )
+    plt.plot(pump_db['Q'], pump_db['H'])
     # plot duty point
-    plt.scatter(
-        duty_db['Q'], duty_db['H']
-    )
+    plt.scatter(duty_db['Q'], duty_db['H'])
     Q_idx, _ = find_nearest(pump_db['Q'], duty_db['Q'])
     H_idx, _ = find_nearest(pump_db['H'], duty_db['H'])
     
     plt.text(duty_db['Q'], duty_db['H'], str(format(result[Q_idx, H_idx], ".2f")))
-    plt.show(block=True)
+    plt.show(block=False)
 
 
 
@@ -320,3 +319,4 @@ if __name__ == '__main__':
     plot_result(pump_db, f_MR, duty_db, title='Mortality Factor')
     plot_result(pump_db, P_m, duty_db, title='Mortality Probability')
     
+    hold = 1
