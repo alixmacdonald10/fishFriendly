@@ -156,32 +156,18 @@ def length_eff(L_f, B_f, fish_type, intake):
         if fish_type.lower() == 'eel':
             L_eff = 0.8 * L_f
         else:
-            L_eff_1 = ((2 * L_max) / np.pi) * (np.sin((np.pi / 2) + theeta) + np.sin(theeta))
-            L_eff_2 = ((2 * L_max) / np.pi) * (np.sin((np.pi / 2) + theeta) - np.sin(theeta))
-            L_eff_3 = ((2 * L_max) / np.pi) * (np.sin((np.pi / 2) - theeta) + np.sin(theeta))
-            L_eff_4 = ((2 * L_max) / np.pi) * (np.sin((np.pi / 2) - theeta) - np.sin(theeta))
-            L_eff = max(L_eff_1, L_eff_2, L_eff_3, L_eff_4)
+            L_eff = ((2 * L_max) / np.pi) * (np.sin((np.pi / 2) - theeta) + np.sin(theeta))
+            # L_eff_2 = ((2 * L_max) / np.pi) * (np.sin((np.pi / 2) + theeta) - np.sin(theeta))
+            # L_eff_3 = ((2 * L_max) / np.pi) * (np.sin((np.pi / 2) - theeta) + np.sin(theeta))
+            # L_eff_4 = ((2 * L_max) / np.pi) * (np.sin((np.pi / 2) - theeta) - np.sin(theeta))
+            # L_eff = max(L_eff_1, L_eff_2, L_eff_3, L_eff_4)
     return L_eff
 
 
 def collision_probability(L_eff, v_m, omega, r, n_blade, wf=0, alpha=0):
 
     # collision probability - assume no fish relative motion and no preswirl
-    P_th = (L_eff * n_blade * (omega * r)) / (v_m  * 2 * np.pi * r)
-
-    # THE BELOW IS FROM TECHNICAL PAPER BY BVE - NOT USED IN NEN
-    # -----------------------------------------------
-    # leading edge length
-    #L_1_edge = 0.9546  # sbf 140 ONLY
-    # Area
-    #A = np.pi * (R_i + R_o) * L_1_edge
-    # time for blade pass
-    #t_fish = (L_eff * A) / Q
-    # time for blade to pass one pitch
-    #t_blade = 60 / (n_blade * N)
-    # Collision probability
-    #P_th = t_fish / t_blade
-    # ----------------------------------------------
+    P_th = (L_eff * n_blade * omega * r) / (v_m  * 2 * np.pi * r)
 
     # probability can only be from 0 - 1 therefore:
     P_th = max(0, min(1, P_th))
@@ -259,7 +245,7 @@ def plot_result(pump_db, result, duty_db, title):
     Z = result
     
     # plot contour lines
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10, 4))
     CS = ax.contour(X, Y, Z, cmap='binary')
     ax.contourf(X, Y, Z,
                 cmap='RdYlGn_r', extend='both', alpha=0.5
@@ -271,6 +257,7 @@ def plot_result(pump_db, result, duty_db, title):
     ax.set_ylabel('Head (m)')
     # plot pump curve over contour plot
     plt.plot(pump_db['Q'], pump_db['H'])
+    ax.annotate(f"{pump_db['N']} RPM", (pump_db['Q'][8], pump_db['H'][8]))
     # plot duty point
     plt.scatter(duty_db['Q'], duty_db['H'])
     Q_idx, _ = find_nearest(pump_db['Q'], duty_db['Q'])
@@ -287,10 +274,10 @@ if __name__ == '__main__':
     pump_name = 'CBF 140_12'
     pump_speed = 186  # rpm
     fish_type = 'fish'  # fish or eel
-    L_f = 0.5  # fish length
-    B_f = 0  # fish height
+    L_f = 0.5  # fish length m
+    B_f = 0  # fish height m
     fish_db = {'fish_type': fish_type, 'L_f': L_f, 'B_f': B_f}
-    intake = 'N'  # type 10 intake?
+    intake = 'Y'  # type 10 intake?
     H_duty = 4.8  # m
     Q_duty = 4  # m^3/s
     
