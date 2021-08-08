@@ -1,3 +1,4 @@
+import streamlit as st
 import numpy as np
 import pandas as pd
 import json
@@ -253,24 +254,55 @@ def plot_result(pump_db, result, duty_db, title):
 
 
 
-if __name__ == '__main__':
-    # inputs
-    database_path = 'D:\\Scripts\\fishFriendly\\database.json'
-    pump_name = 'CBF 140_12'
-    pump_speed = 186  # rpm
-    fish_type = 'eel'  # fish or eel
-    L_f = 0.5  # fish length m
-    B_f = 0  # fish height m
-    fish_db = {'fish_type': fish_type, 'L_f': L_f, 'B_f': B_f}
-    intake = 'Y'  # type 10 intake?
-    H_duty = 4.8  # m
-    Q_duty = 4  # m^3/s
-    
+# set title and subtitle
+st.title('Fish Freindly Analysis')
+subtitle = ('The following tool determines the mortality probability of a pump at a specific duty according to NEN 8775')
+st.write(subtitle)
+
+# sidebar inputs
+st.sidebar.markdown('**Inputs**')
+st.sidebar.markdown("""---""")
+pump_des = st.sidebar.selectbox(
+    'Pump designation',
+     ['SAF', 'SBF', 'CAF', 'CBF']
+)
+pump_size = st.sidebar.selectbox(
+    'Pump size',
+     ['45', '60', '70', '90', '100', '120', '140']
+)
+pump_speed = st.sidebar.number_input(label="Pump speed (RPM)", value=0)
+pump_speed = float(pump_speed)
+fish_type = st.sidebar.selectbox('Fish type', ['eel', 'fish'])  # fish or eel
+L_f = st.sidebar.number_input(label="Fish length (m)", min_value=0.0, max_value=1.5, step=1.,format="%.2f")
+L_f = float(L_f)
+B_f = st.sidebar.number_input(label="Fish height (m)", min_value=0.0, max_value=1.5, step=1.,format="%.2f")
+B_f = float(B_f)
+intake = st.sidebar.selectbox('Type 10 / Bedford intake?', ['Y', 'N']) 
+H_duty = st.sidebar.number_input(label="Duty head (m)", min_value=0.0, max_value=18.0, step=1.,format="%.1f")
+H_duty = float(H_duty)
+Q_duty = st.sidebar.number_input(label="Duty flow (m\N{SUPERSCRIPT THREE}/s)", min_value=0.0, max_value=10.0, step=1.,format="%.3f")
+Q_duty = float(Q_duty)
+
+# database info
+database_path = 'D:\\Scripts\\fishFriendly\\database.json'
+st.markdown("""---""")
+# run 
+pressed = st.sidebar.button('Run Analysis')
+if pressed:    
+    if 'BF' in pump_des:
+        pump_name = f'{pump_des} {pump_size}_12'
+    else:
+        pump_name = f'{pump_des} {pump_size}_05'
     # convert name to database naming convention
     database_name = pump_name.lower()[1:]
-    
     # load in the pump data    
     pump_db = load_pump(database_name, database_path)
+    placeholder = st.empty()
+    if pump_db is None:
+        placeholder.write('ERROR: Pump type not found!\nPlease try another type and contact AM')
+    else:
+        placeholder.write('Running analysis (this could take a few seconds)')
+
     #scale duty to suit operating speed and overwrite database
     Q_scaled, H_scaled, P_scaled, N = scale_duty(
         pump_speed,
@@ -286,13 +318,18 @@ if __name__ == '__main__':
     
     idx_duty, _ = find_nearest(pump_db['Q'], Q_duty)
     duty_db = {'H': pump_db['H'][idx_duty], 'Q': pump_db['Q'][idx_duty]}
-    
-        
-    # analyse to standards
-    v_strike, P_th, f_MR, P_m = NEN_analyse(pump_db, fish_db, intake)
-
-    plot_result(pump_db, v_strike, duty_db, title='Max Strike Velocity m/s')
-    plot_result(pump_db, P_th, duty_db, title='Collision Probabiltiy')
-    plot_result(pump_db, f_MR, duty_db, title='Mortality Factor')
-    plot_result(pump_db, P_m, duty_db, title='Mortality Probability')  
-    
+    fish_db = {'fish_type': fish_type, 'L_f': L_f, 'B_f': B_f}
+    # analyse to standard
+    v_strike, P_th, f_MR, P_m = NEN_analyse(pump_db, fish_db, intake, n_steps=30)
+    title = f'NEN 8775 Mortality Probability\n\n Pump Type: {pump_name}\nPump Speed: {pump_speed} RPM\nFish Type: {fish_type}\nFish Length: {L_f} m'
+    fig = plot_result(pump_db, P_m, duty_db, title)
+    placeholder.empty()
+    placeholder.write('Analysis complete!')
+    # find duty mortality probability
+    Q_idx, _ = find_nearest(pump_db['Q'], duty_db['Q'])
+    H_idx, _ = find_nearest(pump_db['H'], duty_db['H'])
+    duty_mortality = format(P_m[Q_idx, H_idx] * 100, ".2f")
+    # print mortality probability and figure
+    st.write(f'Mortality probability: {(duty_mortality)}%')
+    st.write(fig)
+    st.caption('Download figure by right clicking and selecting "Save image as..."')
