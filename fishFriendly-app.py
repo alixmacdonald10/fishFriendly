@@ -130,39 +130,39 @@ database_path = '.\\database.json'
 st.markdown("""---""")
 # run 
 pressed = st.sidebar.button('Run Analysis')
-try:
-    if pressed:    
-        # load in the pump data    
-        pump_db = main.load_pump(database_name, database_path)
-        with st.spinner(text='Running analysis (this could take a few seconds)'):
-            #scale duty to suit operating speed and overwrite database
-            Q_scaled, H_scaled, P_scaled, N = main.scale_duty(
-                pump_speed,
-                pd.Series(pump_db['Q']),
-                pd.Series(pump_db['H']),
-                pd.Series(pump_db['P']),
-                pump_db['N']
-            )
-            pump_db['Q'] = Q_scaled
-            pump_db['H'] = H_scaled
-            pump_db['P'] = P_scaled
-            pump_db['N'] = N
+# try:
+if pressed:    
+    # load in the pump data    
+    pump_db = main.load_pump(database_name, database_path)
+    with st.spinner(text='Running analysis (this could take a few seconds)'):
+        #scale duty to suit operating speed and overwrite database
+        Q_scaled, H_scaled, P_scaled, N = main.scale_duty(
+            pump_speed,
+            pd.Series(pump_db['Q']),
+            pd.Series(pump_db['H']),
+            pd.Series(pump_db['P']),
+            pump_db['N']
+        )
+        pump_db['Q'] = Q_scaled
+        pump_db['H'] = H_scaled
+        pump_db['P'] = P_scaled
+        pump_db['N'] = N
 
-            idx_duty, _ = main.find_nearest(pump_db['Q'], Q_duty)
-            duty_db = {'H': pump_db['H'][idx_duty], 'Q': pump_db['Q'][idx_duty]}
-            # analyse to standard
-            v_strike, P_th, f_MR, P_m = NEN_analyse(pump_db, fish_db, intake, n_steps=30)
-            title = f'NEN 8775 Mortality Probability\n\n Pump Type: {pump_name}\nPump Speed: {pump_speed} RPM\nFish Type: {fish_type}\nFish Length: {L_f} m'
-            fig = main.plot_result(pump_db, P_m, duty_db, title)
-            st.success('Analysis complete!')
-            # find duty mortality probability
-            Q_idx, _ = main.find_nearest(pump_db['Q'], duty_db['Q'])
-            H_idx, _ = main.find_nearest(pump_db['H'], duty_db['H'])
-            duty_mortality = format(P_m[Q_idx, H_idx] * 100, ".2f")
-            # print mortality probability and figure
-            st.write(f'Mortality probability: {(duty_mortality)}%')
-            st.write(fig)
-            st.caption('Download figure by right clicking and selecting "Save image as..."')
+        idx_duty, _ = main.find_nearest(pump_db['Q'], Q_duty)
+        duty_db = {'H': pump_db['H'][idx_duty], 'Q': pump_db['Q'][idx_duty]}
+        # analyse to standard
+        v_strike, P_th, f_MR, P_m = NEN_analyse(pump_db, fish_db, intake, n_steps=30)
+        title = f'NEN 8775 Mortality Probability\n\n Pump Type: {pump_name}\nPump Speed: {pump_speed} RPM\nFish Type: {fish_type}\nFish Length: {L_f} m'
+        fig = main.plot_result(pump_db, P_m, duty_db, title)
+        st.success('Analysis complete!')
+        # find duty mortality probability
+        Q_idx, _ = main.find_nearest(pump_db['Q'], duty_db['Q'])
+        H_idx, _ = main.find_nearest(pump_db['H'], duty_db['H'])
+        duty_mortality = format(P_m[Q_idx, H_idx] * 100, ".2f")
+        # print mortality probability and figure
+        st.write(f'Mortality probability: {(duty_mortality)}%')
+        st.write(fig)
+        st.caption('Download figure by right clicking and selecting "Save image as..."')
 
-except Exception as e:
-    st.error(e.message)
+# except Exception as e:
+#     st.error(e.message)
