@@ -89,7 +89,7 @@ subtitle = ('The following tool determines the probability of fish mortality as 
 explainer = ('Calculation inputs are located on the left hand toolbar. Duty points and fish height are not required and can be left blank, if added the closest point on the curve to the duty will be shown.')
 st.write(subtitle)
 st.write(explainer)
-st.caption('Data currently missing for AF 100 abd BF 70 type pumps')
+st.caption('Missing data for AF 100 and BF 70 type pumps')
 
 # sidebar inputs
 st.sidebar.markdown("**Inputs**")
