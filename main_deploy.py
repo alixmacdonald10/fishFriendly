@@ -297,39 +297,36 @@ if pressed:
     database_name = pump_name.lower()[1:]
     # load in the pump data    
     pump_db = load_pump(database_name, database_path)
-    placeholder = st.empty()
     if pump_db is None:
-        placeholder.write('ERROR: Pump type not found!\nPlease try another type and contact AM')
+        st.error('ERROR: Pump type not found!\nPlease try another type and contact AM')
     else:
-        placeholder.write('Running analysis (this could take a few seconds)')
-
-    #scale duty to suit operating speed and overwrite database
-    Q_scaled, H_scaled, P_scaled, N = scale_duty(
-        pump_speed,
-        pd.Series(pump_db['Q']),
-        pd.Series(pump_db['H']),
-        pd.Series(pump_db['P']),
-        pump_db['N']
-    )
-    pump_db['Q'] = Q_scaled
-    pump_db['H'] = H_scaled
-    pump_db['P'] = P_scaled
-    pump_db['N'] = N
-    
-    idx_duty, _ = find_nearest(pump_db['Q'], Q_duty)
-    duty_db = {'H': pump_db['H'][idx_duty], 'Q': pump_db['Q'][idx_duty]}
-    fish_db = {'fish_type': fish_type, 'L_f': L_f, 'B_f': B_f}
-    # analyse to standard
-    v_strike, P_th, f_MR, P_m = NEN_analyse(pump_db, fish_db, intake, n_steps=30)
-    title = f'NEN 8775 Mortality Probability\n\n Pump Type: {pump_name}\nPump Speed: {pump_speed} RPM\nFish Type: {fish_type}\nFish Length: {L_f} m'
-    fig = plot_result(pump_db, P_m, duty_db, title)
-    placeholder.empty()
-    placeholder.write('Analysis complete!')
-    # find duty mortality probability
-    Q_idx, _ = find_nearest(pump_db['Q'], duty_db['Q'])
-    H_idx, _ = find_nearest(pump_db['H'], duty_db['H'])
-    duty_mortality = format(P_m[Q_idx, H_idx] * 100, ".2f")
-    # print mortality probability and figure
-    st.write(f'Mortality probability: {(duty_mortality)}%')
-    st.write(fig)
-    st.caption('Download figure by right clicking and selecting "Save image as..."')
+        with st.spinner(text='Running analysis (this could take a few seconds)'):
+            #scale duty to suit operating speed and overwrite database
+            Q_scaled, H_scaled, P_scaled, N = scale_duty(
+                pump_speed,
+                pd.Series(pump_db['Q']),
+                pd.Series(pump_db['H']),
+                pd.Series(pump_db['P']),
+                pump_db['N']
+            )
+            pump_db['Q'] = Q_scaled
+            pump_db['H'] = H_scaled
+            pump_db['P'] = P_scaled
+            pump_db['N'] = N
+            
+            idx_duty, _ = find_nearest(pump_db['Q'], Q_duty)
+            duty_db = {'H': pump_db['H'][idx_duty], 'Q': pump_db['Q'][idx_duty]}
+            fish_db = {'fish_type': fish_type, 'L_f': L_f, 'B_f': B_f}
+            # analyse to standard
+            v_strike, P_th, f_MR, P_m = NEN_analyse(pump_db, fish_db, intake, n_steps=30)
+            title = f'NEN 8775 Mortality Probability\n\n Pump Type: {pump_name}\nPump Speed: {pump_speed} RPM\nFish Type: {fish_type}\nFish Length: {L_f} m'
+            fig = plot_result(pump_db, P_m, duty_db, title)
+            st.success('Analysis complete!')
+            # find duty mortality probability
+            Q_idx, _ = find_nearest(pump_db['Q'], duty_db['Q'])
+            H_idx, _ = find_nearest(pump_db['H'], duty_db['H'])
+            duty_mortality = format(P_m[Q_idx, H_idx] * 100, ".2f")
+            # print mortality probability and figure
+            st.write(f'Mortality probability: {(duty_mortality)}%')
+            st.write(fig)
+            st.caption('Download figure by right clicking and selecting "Save image as..."')
