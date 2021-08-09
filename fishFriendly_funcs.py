@@ -241,12 +241,12 @@ def plot_result(pump_db, result, duty_db, title):
     # plot pump curve over contour plot
     plt.plot(pump_db['Q'], pump_db['H'])
     ax.annotate(f"{pump_db['N']} RPM", (pump_db['Q'][8], pump_db['H'][8]))
-    # plot duty point
+    # plot duty point or BEP
     plt.scatter(duty_db['Q'], duty_db['H'])
     Q_idx, _ = find_nearest(pump_db['Q'], duty_db['Q'])
     H_idx, _ = find_nearest(pump_db['H'], duty_db['H'])
-    
     plt.text(duty_db['Q'], duty_db['H'], f'  {format(result[Q_idx, H_idx], ".2f")}')
+        
     plt.show(block=False)
     
     return fig
