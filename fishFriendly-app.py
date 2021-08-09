@@ -124,7 +124,7 @@ Q_duty = st.sidebar.number_input(label="Duty flow (m\N{SUPERSCRIPT THREE}/s)", m
 Q_duty = float(Q_duty)
 
 # database info
-database_path = '.\\database.json'
+database_path = 'database.json'
 
 # seperator
 st.markdown("""---""")
