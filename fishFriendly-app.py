@@ -86,10 +86,14 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=30):
 # set title and subtitle
 st.title('Fish Freindly Analysis')
 subtitle = ('The following tool determines the probability of fish mortality as it passed through a pump at a specific duty according to Dutch Standard NEN 8775')
+explainer = ('Calculation inputs are located on the left hand toolbar. Duty points and fish height are not required and can be left blank, if added the closest point on the curve to the duty will be shown.')
 st.write(subtitle)
+st.write(explainer)
+st.caption('Data currently missing for AF 100 abd BF 70 type pumps')
 
 # sidebar inputs
 st.sidebar.markdown("**Inputs**")
+st.sidebar.caption("*Not required")
 # pump name
 pump_des = st.sidebar.selectbox(
     'Pump designation',
@@ -112,15 +116,15 @@ pump_speed = float(pump_speed)
 fish_type = st.sidebar.selectbox('Fish type', ['eel', 'fish'])  # fish or eel
 L_f = st.sidebar.number_input(label="Fish length (m)", min_value=0.0, max_value=1.5, step=1.,format="%.2f")
 L_f = float(L_f)
-B_f = st.sidebar.number_input(label="Fish height (m)", min_value=0.0, max_value=1.5, step=1.,format="%.2f")
+B_f = st.sidebar.number_input(label="Fish height (m) *", min_value=0.0, max_value=1.5, step=1.,format="%.2f")
 B_f = float(B_f)
 fish_db = {'fish_type': fish_type, 'L_f': L_f, 'B_f': B_f}
 # intake used?
 intake = st.sidebar.selectbox('Type 10 / Bedford intake?', ['Y', 'N']) 
 # duty points
-H_duty = st.sidebar.number_input(label="Duty head (m)", min_value=0.0, max_value=18.0, step=1.,format="%.1f")
+H_duty = st.sidebar.number_input(label="Duty head (m) *", min_value=0.0, max_value=18.0, step=1.,format="%.1f")
 H_duty = float(H_duty)
-Q_duty = st.sidebar.number_input(label="Duty flow (m\N{SUPERSCRIPT THREE}/s)", min_value=0.0, max_value=10.0, step=1.,format="%.3f")
+Q_duty = st.sidebar.number_input(label="Duty flow (m\N{SUPERSCRIPT THREE}/s) *", min_value=0.0, max_value=10.0, step=1.,format="%.3f")
 Q_duty = float(Q_duty)
 
 # database info
