@@ -1,9 +1,10 @@
-The following programme creates a web app using Python to calculate
-fish mortality passing through a pump according to NEN8775 standards.
+# Fish mortality calculator deployed on Heroku
 
-The app is deployed on Heroku
+The following programme calculates fish mortality passing through a pump according to NEN8775 standards and is written in **python**.
+
 
 The programme uses:
+
 - Numpy
 - Pandas
 - Streamlit
