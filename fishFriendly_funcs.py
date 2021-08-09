@@ -255,7 +255,7 @@ def plot_result(pump_db, result, duty_db, title):
 
 if __name__ == '__main__':
     # inputs
-    database_path = 'D:\\Scripts\\fishFriendly\\database.json'
+    database_path = '.\\database.json'
     pump_name = 'CBF 140_12'
     pump_speed = 186  # rpm
     fish_type = 'eel'  # fish or eel
