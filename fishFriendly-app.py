@@ -93,7 +93,7 @@ st.sidebar.markdown("**Inputs**")
 # pump name
 pump_des = st.sidebar.selectbox(
     'Pump designation',
-     ['SAF', 'SBF', 'CAF', 'CBF']
+     ['DAF', 'DBF', 'SAF', 'SBF', 'CAF', 'CBF']
 )
 pump_size = st.sidebar.selectbox(
     'Pump size',
