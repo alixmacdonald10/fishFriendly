@@ -91,9 +91,10 @@ st.markdown("""
             
             Calculation inputs are located on the left hand toolbar.
             
-            Notes on implementation: 
-            - Duty points are not required and can be left blank. If duty is not added then BEP will be plotted instead.
+            Notes on implementation:
+            - Pump speed is not required. If blank then nominal speed is used.
             - Fish sizes are not required. If blank then fish sizes from NEN 8775 are used.
+            - Duty points are not required. If blank then BEP will be plotted instead.
             """
 )
 st.caption('Missing data for AF 100 and BF 70 type pumps')
@@ -118,7 +119,7 @@ else:
 # convert name to database naming convention
 database_name = pump_name.lower()[1:]
 # pump speed
-pump_speed = st.sidebar.number_input(label="Pump speed (RPM)", value=0)
+pump_speed = st.sidebar.number_input(label="Pump speed (RPM) *", value=0)
 pump_speed = float(pump_speed)
 # fish type and size
 fish_type = st.sidebar.selectbox('Fish type', ['eel', 'fish'])  # fish or eel
@@ -162,19 +163,24 @@ if pressed:
     pump_db = main.load_pump(database_name, database_path)
     with st.spinner(text='Running analysis (this could take up to a minute)...'):
         #scale duty to suit operating speed and overwrite database
-        Q_scaled, H_scaled, P_scaled, N = main.scale_duty(
-            pump_speed,
-            pd.Series(pump_db['Q']),
-            pd.Series(pump_db['H']),
-            pd.Series(pump_db['P']),
-            pump_db['N']
-        )
-        pump_db['Q'] = Q_scaled
-        pump_db['H'] = H_scaled
-        pump_db['effy'] = pd.Series(pump_db['effy'])
-        pump_db['P'] = P_scaled
-        pump_db['N'] = N
-        
+        if pump_speed == 0:
+            pump_db['Q'] = pd.Series(pump_db['Q'])
+            pump_db['H'] = pd.Series(pump_db['H'])
+            pump_db['effy'] = pd.Series(pump_db['effy'])
+            pump_db['P'] = pd.Series(pump_db['P'])
+        else:
+            Q_scaled, H_scaled, P_scaled, N = main.scale_duty(
+                pump_speed,
+                pd.Series(pump_db['Q']),
+                pd.Series(pump_db['H']),
+                pd.Series(pump_db['P']),
+                pump_db['N']
+            )
+            pump_db['Q'] = Q_scaled
+            pump_db['H'] = H_scaled
+            pump_db['effy'] = pd.Series(pump_db['effy'])
+            pump_db['P'] = P_scaled
+            pump_db['N'] = N
         
         # analyse to standard
         v_strike, P_th, f_MR, P_m = NEN_analyse(pump_db, fish_db, intake, n_steps=30)
