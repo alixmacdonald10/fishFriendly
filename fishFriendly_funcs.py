@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
+from numba import jit, njit
 
 
 
@@ -17,7 +18,7 @@ def load_pump(database_name, database_path):
 
     return pump_db
     
-
+@jit
 def scale_duty(pump_speed, Q, H, P, N):
     Q_scaled = Q_scale(Q, N, pump_speed)
     H_scaled = H_scale(H, N, pump_speed)
@@ -26,35 +27,35 @@ def scale_duty(pump_speed, Q, H, P, N):
     
     return Q_scaled, H_scaled, P_scaled, N     
 
-
+@jit
 def Q_scale(Q1, N1, N2, D1=1.0, D2=1.0):
     Q2 = ((N2 / N1) * (D2 / D1)) * Q1
     return Q2
 
-
+@jit
 def H_scale(H1, N1, N2, D1=1.0, D2=1.0):  
     H2 = ((N2**2 / N1**2) * (D1**2 / D2**2)) * H1
     return H2  
 
-
+@jit
 def P_scale(P1, N1, N2, D1=1.0, D2=1.0):
     P2 = ((N2**2 / N1**2) * (D1**2 / D2**2)) * P1
     return P2
 
-
+@jit
 def N_scale(N1, H1, H2, D1=1.0, D2=1.0):
     N2 = (H2**0.5 / H1**0.5) * (D1 / D2) * N1
     return N2
 
-
+@jit
 def find_nearest(array, value):
     idx = np.abs(array - value).argmin()
     val = array[idx]
     return idx, val
 
-
+@jit
 def NEN_analyse(pump_db, fish_db, intake, n_steps=30):
-    
+    fish_type = fish_db['fish_type']
     # calculate effective length of fish
     L_eff = length_eff(fish_db['L_f'], fish_db['B_f'], fish_db['fish_type'], intake)
     # define max length of  head and flow curve series
@@ -129,6 +130,36 @@ def NEN_analyse(pump_db, fish_db, intake, n_steps=30):
     return v_strike_max_array, P_th, f_MR, P_m
 
 
+def NEN_analyse_VECT(pump_db, fish_db, intake, n_steps=30):
+    # calculate effective length of fish
+    L_eff = length_eff(fish_db['L_f'], fish_db['B_f'], fish_db['fish_type'], intake)
+    # calc impeller details
+    R_o = pump_db['D_blade'] / 2
+    R_i = pump_db['d_blade'] / 2
+    d_r = (R_o - R_i) / n_steps
+    
+    # create database over correct size
+    df = pd.DataFrame(data=pump_db, columns=['Q', 'H'])
+    print(df.head())
+    df_full = pd.concat([df] * n_steps)
+    print(len(df))
+    # radial position
+    r_lst = []
+    for i_r in range(0, n_steps - 1):
+        r = R_i + (i_r) * d_r + (d_r / 2)
+        r_lst.append(r)
+        # determine angles at each position
+        r_angle_idx, _ = find_nearest(pd.Series(pump_db['NEN_r_array']), r / R_o)
+        beta_deg = pump_db['NEN_beta_array'][r_angle_idx]
+        beta = np.radians(beta_deg)
+        delta_deg = pump_db['NEN_delta_array'][r_angle_idx]
+        delta = np.radians(delta_deg)
+        r_thk_idx, _ = find_nearest(pd.Series(pump_db['r_imp_thk']), r * 1e3)
+        d = pump_db['imp_thk'][r_thk_idx]
+    
+    
+
+@njit
 def length_eff(L_f, B_f, fish_type, intake):
     
     L_max = np.sqrt(L_f**2 + B_f**2)
@@ -146,7 +177,7 @@ def length_eff(L_f, B_f, fish_type, intake):
             # L_eff = max(L_eff_1, L_eff_2, L_eff_3, L_eff_4)
     return L_eff
 
-
+@njit  # THIS SLOWS DOWN FROM 50.803 TO 56.797!
 def collision_probability(L_eff, v_m, omega, r, n_blade, wf=0, alpha=0):
 
     # collision probability - assume no fish relative motion and no preswirl
@@ -156,7 +187,7 @@ def collision_probability(L_eff, v_m, omega, r, n_blade, wf=0, alpha=0):
     P_th = max(0, min(1, P_th))
     return P_th
 
-
+@njit
 def strike_velocity(v_m, omega, r, beta, delta):
     # assume no fish relative motion and no pre swirl
     v_strike = np.sqrt(
@@ -164,7 +195,7 @@ def strike_velocity(v_m, omega, r, beta, delta):
     )
     return v_strike
 
-
+@njit
 def mortality_factor(L_f, t_blade, v_strike, fish_type):
 
     ratio = L_f / (t_blade * 1e-3)
@@ -255,7 +286,7 @@ def plot_result(pump_db, result, duty_db, title):
 
 if __name__ == '__main__':
     # inputs
-    database_path = '.\\database.json'
+    database_path = 'D:\\Scripts\\fishFriendly\\database.json'
     pump_name = 'CBF 140_12'
     pump_speed = 186  # rpm
     fish_type = 'eel'  # fish or eel
