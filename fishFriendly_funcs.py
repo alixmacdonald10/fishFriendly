@@ -86,14 +86,14 @@ def NEN_analyse(Q, H, N, D_blade, d_blade, n_blade, NEN_r_array, NEN_beta_array,
             # determine rotational speed
             omega = (2.0 * np.pi * N_pump_scale) / 60.0  # rad/s
             # initial area - reset at each duty position
-            A = 0.0
+            A = np.zeros(1, dtype=np.float64)
             # step along blade at this duty and sum factors
-            v_strike_max = 0.0
+            v_strike_max = np.zeros(1, dtype=np.float64)
             for i_r in range(0, n_steps):
                 # radial position
                 r = R_i + (i_r) * d_r + (d_r / 2)  # removed - 1 due to index
                 # change in area
-                d_A = 2 * np.pi * r * d_r
+                d_A = 2.0 * np.pi * r * d_r
                 # new area - overwriting previous A value
                 A = A + d_A
                 # collision probabilty
@@ -106,7 +106,6 @@ def NEN_analyse(Q, H, N, D_blade, d_blade, n_blade, NEN_r_array, NEN_beta_array,
                 delta_deg = NEN_delta_array[r_angle_idx]
                 delta = np.radians(delta_deg)
                 # strike velocity
-                print(v_m, omega, r, beta, delta)
                 v_strike = strike_velocity(v_m, omega, r, beta, delta)
                 if v_strike > v_strike_max:
                     v_strike_max = v_strike
@@ -116,11 +115,11 @@ def NEN_analyse(Q, H, N, D_blade, d_blade, n_blade, NEN_r_array, NEN_beta_array,
                 # mortality factor
                 df_MR = mortality_factor(L_eff, d, v_strike, fish_type)
                 # mortality probabilty
-                dP_m = dP_th * df_MR
+                dP_m = np.multiply(dP_th, df_MR)
                 # determine cumulative probabilities and factors
-                P_th[j][i] = ((P_th[j][i] + (dP_th * v_m * d_A)))
-                f_MR[j][i] = ((f_MR[j][i] + (df_MR * v_m * d_A)))
-                P_m[j][i] = ((P_m[j][i] + (dP_m * v_m * d_A)))
+                P_th[j][i] = np.add(((P_th[j][i], (dP_th * v_m * d_A))))
+                f_MR[j][i] = np.add(((f_MR[j][i], (df_MR * v_m * d_A))))
+                P_m[j][i] = np.add(((dP_m[j][i], (dP_m * v_m * d_A))))
             v_strike_max_array[j][i] = v_strike_max
             # determine total mortality as per NEN 8775, section 9.9
             P_th[j][i] = P_th[j][i] / Q_temp
@@ -214,7 +213,7 @@ def mortality_factor(L_f, t_blade, v_strike, fish_type):
 
     # determine mortality factor
     if v_strike < v_crit:
-        f_MR = 0.0
+        f_MR = np.zeros(1, dtype=np.float64)
     else:
         if fish == "fish":
             f_MR = (a * np.log(ratio) + b) * (v_strike - v_crit)
